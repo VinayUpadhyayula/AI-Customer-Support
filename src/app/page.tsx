@@ -1,71 +1,87 @@
 'use client'
 
-import { Box, Button, Stack, TextField, Typography} from '@mui/material'
-import { useState } from 'react'
+import { Box, Button, Stack, TextField, Typography } from '@mui/material'
+import { useEffect, useRef, useState } from 'react'
+import SupportAgentIcon from '@mui/icons-material/SupportAgent';
 
 export default function Home() {
   const [messages, setMessages] = useState([
     {
       role: 'model',
-      parts:[{ text: "Hi! I'm the Headstarter support assistant. How can I help you today?"}],
+      parts: [{ text: "Hi! I'm the Headstarter support assistant. How can I help you today?" }],
     },
   ])
   const [message, setMessage] = useState('')
+  const [isLoading, setIsLoading] = useState(false);
+  const msgEndRef: any = useRef(null);
 
+  const scrollToBottom = () => {
+    if (msgEndRef.current)
+      msgEndRef.current.scrollIntoView({ behavior: "smooth" })
+  }
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages])
   const sendMessage = async () => {
     if (!message.trim()) return;  // Don't send empty messages
-  
+    setIsLoading(true);
+
     setMessage('')
     setMessages((messages) => [
       ...messages,
       {
         role: 'user',
-        parts:[{ text: message}],
+        parts: [{ text: message }],
       },
       {
         role: 'model',
-        parts:[{ text:''}],
+        parts: [{ text: '' }],
       },
     ])
-  
+
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({history:[...messages],msg:message}),
+        body: JSON.stringify({ history: [...messages], msg: message }),
       })
-  
+
       if (!response.ok) {
         throw new Error('Network response was not ok')
       }
-      if(response.body){
+      if (response.body) {
         const reader = response.body.getReader()
         const decoder = new TextDecoder()
-    
+
         while (true) {
           const { done, value } = await reader.read()
           if (done) break
           const text = decoder.decode(value, { stream: true })
           setMessages((messages) => {
             let lastMessage = messages[messages.length - 1]
-            console.log('here')
-            console.log()
             let otherMessages = messages.slice(0, messages.length - 1)
+            setIsLoading(false)
             return [
               ...otherMessages,
-              { ...lastMessage, parts:[ {text:lastMessage.parts[0].text + text },]},
+              { ...lastMessage, parts: [{ text: lastMessage.parts[0].text + text },] },
             ]
           })
         }
-    }
+      }
     } catch (error) {
       console.error('Error:', error)
       setMessages((messages) => [
         ...messages,
-        { role: 'model', parts:[{text: "I'm sorry, but I encountered an error. Please try again later."}] },
+        { role: 'model', parts: [{ text: "I'm sorry, but I encountered an error. Please try again later." }] },
       ])
+    }
+  }
+  const handleKeyPress = (e: any) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      sendMessage()
     }
   }
 
@@ -81,14 +97,15 @@ export default function Home() {
         padding: { xs: 2, sm: 3, md: 4 }, // Responsive padding
       }}
     >
-       <Box textAlign="center" mb={4}>
+      <Box textAlign="center" mb={4}>
+        <SupportAgentIcon></SupportAgentIcon><span>Astra</span>
         <Typography variant="h4" component="h1">
-          Hello User
-        </Typography>
+            Hello User
+          </Typography>
       </Box>
       <Stack
-      width={{ xs: '95%', sm: '80%', md: '60%', lg: '50%', xl: '40%' }}
-      height={{ xs: '90%', sm: '80%', md: '70%', lg: '60%', xl: '50%' }}
+        width={{ xs: '95%', sm: '80%', md: '60%', lg: '50%', xl: '40%' }}
+        height={{ xs: '90%', sm: '80%', md: '70%', lg: '60%', xl: '50%' }}
         direction={'column'}
         border="1px solid black"
         p={2}
@@ -98,7 +115,7 @@ export default function Home() {
           overflowY: 'auto',
           backgroundColor: 'white',
           borderRadius: 2,
-          
+
         }}
       >
         <Stack
@@ -135,6 +152,7 @@ export default function Home() {
               </Box>
             </Box>
           ))}
+          <div ref={msgEndRef} />
         </Stack>
         <Stack direction={'row'} spacing={2}>
           <TextField
@@ -142,9 +160,14 @@ export default function Home() {
             fullWidth
             value={message}
             onChange={(e) => setMessage(e.target.value)}
+            onKeyPress={handleKeyPress}
+            disabled={isLoading}
           />
-          <Button variant="contained" onClick={sendMessage}>
-            Send
+          <Button variant="contained"
+            onClick={sendMessage}
+            disabled={isLoading}
+          >
+            {isLoading ? 'Sending....' : 'Send'}
           </Button>
         </Stack>
       </Stack>
