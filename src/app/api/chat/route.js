@@ -1,34 +1,35 @@
 import { NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
-const prompt = ""
+import {
+    BedrockRuntimeClient,
+    ConverseStreamCommand,
+    ConverseCommand
+  } from "@aws-sdk/client-bedrock-runtime";
 
 export async function POST(req) {
-    const geminiAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY);
-    const model = geminiAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
+    const client = new BedrockRuntimeClient({
+        region: "us-east-1",
+        credentials: {
+                accessKeyId: process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID,
+                secretAccessKey: process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY,
+              },
+    });
+    const modelId = "meta.llama3-8b-instruct-v1:0";
     const data = await req.json()
-    //console.log(data)
-    const chat = model.startChat(
-        {
-            history: data.messages
-        }
-    );
-    const result = await chat.sendMessageStream(data.msg);
-    //console.log(result);
-
+    console.log(data);
+    const command = new ConverseCommand({
+      modelId,
+      messages: data,
+      inferenceConfig: { maxTokens: 1024, temperature: 0.5, topP: 0.9 },
+    });
+    const result = await client.send(command);
+    const responseText = result.output.message.content[0].text;
+    console.log(responseText);
     const stream = new ReadableStream({
         async start(controller) {
             const encoder = new TextEncoder() // Create a TextEncoder to convert strings to Uint8Array
             try {
-                // Iterate over the streamed chunks of the response
-                for await (const chunk of result.stream) {
-                    console.log(chunk.text());
-                    const content = chunk.text();// Extract the content from the chunk
-                    if (content) {
-                        const text = encoder.encode(content) // Encode the content to Uint8Array
-                        controller.enqueue(text) // Enqueue the encoded text to the stream
-                    }
-                }
+                const text = encoder.encode(responseText) // Encode the content to Uint8Array
+                controller.enqueue(text)
             } catch (err) {
                 controller.error(err) // Handle any errors that occur during streaming
             } finally {

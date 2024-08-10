@@ -7,12 +7,8 @@ import SupportAgentIcon from '@mui/icons-material/SupportAgent';
 export default function Home() {
   const [messages, setMessages] = useState([
     {
-      role: 'user',
-      content: [{ text: "Hello" }],
-    },
-    {
-      role: 'assistant',
-      content: [{ text: "Hi! I'm the Headstarter support assistant. How can I help you today?" }],
+      role: 'model',
+      parts: [{ text: "Hi! I'm the Headstarter support assistant. How can I help you today?" }],
     },
   ])
   const [message, setMessage] = useState('')
@@ -35,11 +31,11 @@ export default function Home() {
       ...messages,
       {
         role: 'user',
-        content: [{ text: message }],
+        parts: [{ text: message }],
       },
       {
-        role: 'assistant',
-        content: [{ text: '' }],
+        role: 'model',
+        parts: [{ text: '' }],
       },
     ])
 
@@ -49,7 +45,7 @@ export default function Home() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify([...messages, { role: 'user', content: [{ text: message }] }]),
+        body: JSON.stringify({ history: [...messages], msg: message }),
       })
 
       if (!response.ok) {
@@ -69,7 +65,7 @@ export default function Home() {
             setIsLoading(false)
             return [
               ...otherMessages,
-              { ...lastMessage, content: [{ text: lastMessage.content[0].text + text },] },
+              { ...lastMessage, parts: [{ text: lastMessage.parts[0].text + text },] },
             ]
           })
         }
@@ -78,9 +74,8 @@ export default function Home() {
       console.error('Error:', error)
       setMessages((messages) => [
         ...messages,
-        { role: 'assistant', content: [{ text: "I'm sorry, but I encountered an error. Please try again later." }] },
+        { role: 'model', parts: [{ text: "I'm sorry, but I encountered an error. Please try again later." }] },
       ])
-      setIsLoading(false)
     }
   }
   const handleKeyPress = (e: any) => {
@@ -136,12 +131,12 @@ export default function Home() {
               key={index}
               display="flex"
               justifyContent={
-                message.role === 'assistant' ? 'flex-start' : 'flex-end'
+                message.role === 'model' ? 'flex-start' : 'flex-end'
               }
             >
               <Box
                 bgcolor={
-                  message.role === 'assistant'
+                  message.role === 'model'
                     ? 'primary.main'
                     : 'secondary.main'
                 }
@@ -153,7 +148,7 @@ export default function Home() {
                   wordBreak: 'break-word',
                 }}
               >
-                {message.content[0].text}
+                {message.parts[0].text}
               </Box>
             </Box>
           ))}
