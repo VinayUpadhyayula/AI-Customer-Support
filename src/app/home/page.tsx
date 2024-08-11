@@ -105,7 +105,7 @@ export default function Home() {
       }}
     >
       <Box textAlign="center" mb={4}>
-        <SupportAgentIcon></SupportAgentIcon><span>Welcome, I'm Astra! Your personalized AI assistant</span>
+        <SupportAgentIcon></SupportAgentIcon><span>Welcome,I am Astra! Your personalized AI assistant</span>
         <Typography variant="h4" component="h1">
             Hello {user?.displayName}
           </Typography>
