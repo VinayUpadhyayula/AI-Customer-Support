@@ -43,8 +43,10 @@ export async function POST(req) {
         model: "meta.llama3-8b-instruct-v1:0",
         temperature: 0,
         maxTokens: 2048,
+        accessKeyId: process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY,
       });
-    //   const query = "Can you summarize the document ?"
+
       const promptText = `
       You are an assistant that helps summarize long documents. 
       Here is the document data:
