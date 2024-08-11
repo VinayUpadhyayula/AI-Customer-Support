@@ -3,19 +3,16 @@
 import { Box, Button, Stack, TextField, Typography } from '@mui/material'
 import { useEffect, useRef, useState } from 'react'
 import SupportAgentIcon from '@mui/icons-material/SupportAgent';
+import { signInWithPopup, signOut} from 'firebase/auth';
+import { auth, provider } from './firebase';
+import { useRouter } from 'next/navigation';
+import { useAuth } from './authcontext';
+import Image from 'next/image';
+import { grey } from '@mui/material/colors';
 
 export default function Home() {
-  const [messages, setMessages] = useState([
-    {
-      role: 'user',
-      content: [{ text: "Hello" }],
-    },
-    {
-      role: 'assistant',
-      content: [{ text: "Hi! I'm the Headstarter support assistant. How can I help you today?" }],
-    },
-  ])
-  const [message, setMessage] = useState('')
+  const router = useRouter();
+  const { user,logout} = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const msgEndRef: any = useRef(null);
 
@@ -24,71 +21,22 @@ export default function Home() {
       msgEndRef.current.scrollIntoView({ behavior: "smooth" })
   }
   useEffect(() => {
-    scrollToBottom()
-  }, [messages])
-  const sendMessage = async () => {
-    if (!message.trim()) return;  // Don't send empty messages
-    setIsLoading(true);
-
-    setMessage('')
-    setMessages((messages) => [
-      ...messages,
-      {
-        role: 'user',
-        content: [{ text: message }],
-      },
-      {
-        role: 'assistant',
-        content: [{ text: '' }],
-      },
-    ])
-
+    if (user) {
+      router.push('/home');
+    }
+  }, [user, router]);
+  const signInWithGoogle = async () => {
     try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify([...messages, { role: 'user', content: [{ text: message }] }]),
-      })
-
-      if (!response.ok) {
-        throw new Error('Network response was not ok')
-      }
-      if (response.body) {
-        const reader = response.body.getReader()
-        const decoder = new TextDecoder()
-
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
-          const text = decoder.decode(value, { stream: true })
-          setMessages((messages) => {
-            let lastMessage = messages[messages.length - 1]
-            let otherMessages = messages.slice(0, messages.length - 1)
-            setIsLoading(false)
-            return [
-              ...otherMessages,
-              { ...lastMessage, content: [{ text: lastMessage.content[0].text + text },] },
-            ]
-          })
-        }
-      }
-    } catch (error) {
-      console.error('Error:', error)
-      setMessages((messages) => [
-        ...messages,
-        { role: 'assistant', content: [{ text: "I'm sorry, but I encountered an error. Please try again later." }] },
-      ])
+      setIsLoading(true)
+      const result = await signInWithPopup(auth, provider);
+      // console.log(result);
+      // assignUser(result?.user);
       setIsLoading(false)
+      router.push('/home');
+    } catch (error) {
+      console.error("Error signing in: ", error);
     }
-  }
-  const handleKeyPress = (e: any) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      sendMessage()
-    }
-  }
+  };
 
   return (
     <Box
@@ -102,80 +50,36 @@ export default function Home() {
         padding: { xs: 2, sm: 3, md: 4 }, // Responsive padding
       }}
     >
-      <Box textAlign="center" mb={4}>
-        <SupportAgentIcon></SupportAgentIcon><span>Astra</span>
-        <Typography variant="h4" component="h1">
-            Hello User
-          </Typography>
-      </Box>
-      <Stack
-        width={{ xs: '95%', sm: '80%', md: '60%', lg: '50%', xl: '40%' }}
-        height={{ xs: '90%', sm: '80%', md: '70%', lg: '60%', xl: '50%' }}
-        direction={'column'}
-        border="1px solid black"
-        p={2}
-        spacing={3}
-        sx={{
-          boxShadow: 3,
-          overflowY: 'auto',
-          backgroundColor: 'white',
-          borderRadius: 2,
-
-        }}
-      >
-        <Stack
-          direction={'column'}
-          spacing={2}
-          flexGrow={1}
-          overflow="auto"
-          maxHeight="100%"
-          sx={{ overflowY: 'auto', maxHeight: '100%' }}
-        >
-          {messages.map((message, index) => (
-            <Box
-              key={index}
-              display="flex"
-              justifyContent={
-                message.role === 'assistant' ? 'flex-start' : 'flex-end'
-              }
-            >
-              <Box
-                bgcolor={
-                  message.role === 'assistant'
-                    ? 'primary.main'
-                    : 'secondary.main'
-                }
-                color="white"
-                borderRadius={16}
-                p={3}
-                sx={{
-                  maxWidth: '75%', // Ensure messages wrap within 75% of the container width
-                  wordBreak: 'break-word',
-                }}
+      <Image
+        fill
+        src="/images/ai.jpg"
+        alt="Image alt"
+        style={{ objectFit: "cover"}}
+      />
+      <div style={{backgroundColor: "#57368e80", zIndex: 100, borderRadius: 50}}>
+        <Box textAlign="center" m={4}>
+          <SupportAgentIcon></SupportAgentIcon><Typography variant="h4" component="h1">
+              Astra
+            </Typography>
+          <Typography variant="h5" component="h1" mt={5}>
+              Welcome
+            </Typography>
+            <Stack spacing={2} mt={2}
+              alignItems="center" 
+              sx={{ width: 'auto' }}
               >
-                {message.content[0].text}
-              </Box>
-            </Box>
-          ))}
-          <div ref={msgEndRef} />
-        </Stack>
-        <Stack direction={'row'} spacing={2}>
-          <TextField
-            label="Message"
-            fullWidth
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
-            disabled={isLoading}
-          />
-          <Button variant="contained"
-            onClick={sendMessage}
-            disabled={isLoading}
-          >
-            {isLoading ? 'Sending....' : 'Send'}
-          </Button>
-        </Stack>
-      </Stack>
+                <Button variant="contained"
+                  onClick={signInWithGoogle}
+                  disabled={isLoading}
+                  sx={{ width: 'auto', padding: '8px 16px' }}
+                >
+                  {isLoading ? 'Signing in....' : 'Sign in with Google'}
+                </Button>
+            </Stack>
+        </Box>
+        
+      </div>
+      
     </Box>
   )
 }
