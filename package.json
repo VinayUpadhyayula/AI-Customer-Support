@@ -30,11 +30,14 @@
     "@smithy/util-utf8": "^2.3.0",
     "bedrock": "^4.5.1",
     "cheerio": "^1.0.0",
+    "filereader": "^0.10.3",
     "firebase": "^10.12.5",
     "langchain": "^0.2.15",
+    "mime": "^4.0.4",
     "next": "14.2.5",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "tesseract.js": "^5.1.1"
   },
   "devDependencies": {
     "@types/node": "^20",

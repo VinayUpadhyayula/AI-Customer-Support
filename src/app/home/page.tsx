@@ -51,7 +51,8 @@ export default function Home() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify([...messages, { role: 'user', content: [{ text: message }] }]),
+        //body: JSON.stringify([...messages, { role: 'user', content: [{ text: message }] }]),
+        body: JSON.stringify({text:message}),
       })
 
       if (!response.ok) {

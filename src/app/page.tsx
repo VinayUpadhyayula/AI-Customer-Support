@@ -37,7 +37,7 @@ export default function Home() {
       console.error("Error signing in: ", error);
     }
   };
-
+  
   return (
     <Box
       width="100vw"
