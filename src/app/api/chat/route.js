@@ -16,7 +16,7 @@ export async function POST(req) {
     }
     const geminiAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY);
     const model = geminiAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    const imageFile = "/Users/vinayupadhyayula/Documents/git_projects/ai-customer-support/public/images/charts.jpeg"
+    const imageFile = "public/images/charts.jpeg"
     if(imageFile){
         const base64Image = await convertImageToBase64(imageFile);
     const data = await req.json()
