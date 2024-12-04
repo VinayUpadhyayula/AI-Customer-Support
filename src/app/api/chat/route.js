@@ -16,11 +16,11 @@ export async function POST(req) {
     }
     const geminiAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY);
     const model = geminiAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    const imageFile = "public/images/charts.jpeg"
+    const imageFile = "public/images/line_graph.png"
     if(imageFile){
         const base64Image = await convertImageToBase64(imageFile);
     const data = await req.json()
-    console.log(data)
+    console.log(data.image)
     // const chat = model.startChat(
     //     {
     //         history: data.messages
@@ -33,15 +33,14 @@ export async function POST(req) {
                 parts: 
                     [
                         {
-                            text:"You are a tableau report assistant that can analyze images, find patterns, draws insights and answer questions.",
+                            text:"You are a tableau report assistant that can analyze images, provide insights in a formatted way",
                         },
                         {
                             inlineData: {
                               mimeType: mime.getType(imageFile),
-                              data: base64Image,
+                              data: data.image,
                             },
                         }
-                  
                         
                     
                     ]
