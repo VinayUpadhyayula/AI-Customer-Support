@@ -4,6 +4,8 @@ import { Box, Button, Stack, TextField, Typography } from '@mui/material'
 import { useEffect, useRef, useState } from 'react'
 import SupportAgentIcon from '@mui/icons-material/SupportAgent';
 import { useAuth } from '../authcontext';
+import ReactMarkdown from 'react-markdown';
+
 
 export default function Home() {
   const [messages, setMessages] = useState([
@@ -13,7 +15,7 @@ export default function Home() {
     },
     {
       role: 'assistant',
-      content: [{ text: "Hi! I'm the Olympics Data support assistant. How can I help you today?" }],
+      content: [{ text: "Hi! I'm the Tableau report analysing assistant. How can I help you today?" }],
     },
   ])
   const [message, setMessage] = useState('')
@@ -106,7 +108,7 @@ export default function Home() {
       }}
     >
       <Box textAlign="center" mb={4}>
-        <SupportAgentIcon></SupportAgentIcon><span>Welcome,I am Astra! Your personalized AI assistant</span>
+        <SupportAgentIcon></SupportAgentIcon><span>Welcome,I am your personalized AI assistant</span>
         <Typography variant="h4" component="h1">
             Hello {user?.displayName}
           </Typography>
@@ -142,22 +144,18 @@ export default function Home() {
                 message.role === 'assistant' ? 'flex-start' : 'flex-end'
               }
             >
-              <Box
-                bgcolor={
-                  message.role === 'assistant'
-                    ? 'primary.main'
-                    : 'secondary.main'
-                }
-                color="white"
-                borderRadius={16}
-                p={3}
-                sx={{
-                  maxWidth: '75%', // Ensure messages wrap within 75% of the container width
-                  wordBreak: 'break-word',
-                }}
-              >
-                {message.content[0].text}
-              </Box>
+            <Box
+              bgcolor={message.role === 'assistant' ? 'primary.main' : 'secondary.main'}
+              color="white"
+              borderRadius={16}
+              p={3}
+              sx={{
+                maxWidth: '75%', // Ensure messages wrap within 75% of the container width
+                wordBreak: 'break-word',
+              }}
+            >
+              <ReactMarkdown>{message.content[0].text}</ReactMarkdown>
+            </Box>
             </Box>
           ))}
           <div ref={msgEndRef} />
