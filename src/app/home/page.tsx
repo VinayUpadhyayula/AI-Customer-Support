@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import SupportAgentIcon from '@mui/icons-material/SupportAgent';
 import { useAuth } from '../authcontext';
 import mime from 'mime';
+import ReactMarkdown from 'react-markdown'
 type MessageContent = {
   text: string;
   image?: string|null; // The image is optional
@@ -191,7 +192,7 @@ export default function Home() {
               wordBreak: 'break-word',
             }}
           >
-            {message.content[0].text}
+            <ReactMarkdown>{message.content[0].text}</ReactMarkdown>
             {message.content[0].image && (
               <Box component="img" src={message.content[0].image} alt="Uploaded Preview" sx={{ maxWidth: '100%', height: 'auto', marginTop: '10px', borderRadius: '8px' }} />
             )}
