@@ -48,65 +48,68 @@ export async function POST(req) {
 
     const geminiAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY);
     const model = geminiAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    const imageFile = "public/images/image.png";
-
-    if (imageFile) {
+    const imageFile = "public/images/charts.jpeg"
+    if(imageFile){
         const base64Image = await convertImageToBase64(imageFile);
-        const data = await req.json();
-
-        const chat = model.startChat({
-            history: [
-                {
-                    role: "user",
-                    parts: [
+    const data = await req.json()
+    console.log(data)
+    // const chat = model.startChat(
+    //     {
+    //         history: data.messages
+    //     }
+    // );
+    const chat = model.startChat({
+        history: [
+            {
+                role: "user", // Set system behavior and initial context
+                parts: 
+                    [
                         {
-                            text: `You are a Tableau report assistant that can analyze images, find patterns, draw insights, and answer questions.  **Always** respond using Markdown formatting with headings, 
-                            bullet points, and clear paragraphs. Analyze the provided image and answer the user's question.`,
+                            text:"You are a tableau report assistant that can analyze images, find patterns, draws insights and answer questions.",
                         },
                         {
                             inlineData: {
-                                mimeType: mime.getType(imageFile),
-                                data: base64Image,
+                              mimeType: mime.getType(imageFile),
+                              data: base64Image,
                             },
-                        },
-                    ],
-                },
-            ],
-        });
-
-        const result = await chat.sendMessageStream(data.text);
-        const stream = new ReadableStream({
-            async start(controller) {
-                const encoder = new TextEncoder();
-                let accumulatedText = ""; // Buffer to store incomplete lines
-        
-                try {
-                    for await (const chunk of result.stream) {
-                        const content = chunk.text();
-        
-                        if (content) {
-                            accumulatedText += content; 
-                            const lines = accumulatedText.split("\n");
-                            accumulatedText = lines.pop(); 
-                            const formatted = lines.map(formatResponseToMarkdown).join("\n");
-                            const encodedText = encoder.encode(formatted);
-                            controller.enqueue(encodedText);
                         }
-                    }
-                    // Handle any remaining text
-                    if (accumulatedText) {
-                        const formatted = formatResponseToMarkdown(accumulatedText);
-                        controller.enqueue(encoder.encode(formatted));
-                    }
-                } catch (err) {
-                    controller.error(err);
-                } finally {
-                    controller.close();
+                  
+                        
+                    
+                    ]
+                    
                 }
-            },
-        });
-        
-    
-        return new NextResponse(stream)
-    }
-    }
+        ]
+    });
+    // const chat = await model.startChat({
+    //     query: `Analyze this image: ${base64Image}`
+    //   });
+
+    //chat = model.start_chat(query=query)
+    const result = await chat.sendMessageStream(data.text);
+    //console.log(result);
+
+    const stream = new ReadableStream({
+        async start(controller) {
+            const encoder = new TextEncoder() // Create a TextEncoder to convert strings to Uint8Array
+            try {
+                // Iterate over the streamed chunks of the response
+                for await (const chunk of result.stream) {
+                    console.log(chunk.text());
+                    const content = chunk.text();// Extract the content from the chunk
+                    if (content) {
+                        const text = encoder.encode(content) // Encode the content to Uint8Array
+                        controller.enqueue(text) // Enqueue the encoded text to the stream
+                    }
+                }
+            } catch (err) {
+                controller.error(err) // Handle any errors that occur during streaming
+            } finally {
+                controller.close() // Close the stream when done
+            }
+        },
+    })
+
+    return new NextResponse(stream)
+}
+}

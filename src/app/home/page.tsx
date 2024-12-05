@@ -4,18 +4,52 @@ import { Box, Button, Stack, TextField, Typography } from '@mui/material'
 import { useEffect, useRef, useState } from 'react'
 import SupportAgentIcon from '@mui/icons-material/SupportAgent';
 import { useAuth } from '../authcontext';
-import ReactMarkdown from 'react-markdown';
 
-
+type Message = {
+  role: "user" | "assistant"; // Role is either 'user' or 'assistant'
+  content: MessageContent[]; // Content is an array of MessageContent
+};
 export default function Home() {
-  const [messages, setMessages] = useState([
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [uploadedFilePreview, setUploadedFilePreview] = useState<string | null>(null);
+  const[mimeType, setmimeType] = useState<string | null>('');
+  const convertImageToBase64 = (file:any) : Promise<string> => {
+    setmimeType(mime.getType(file));
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve((reader.result as string).split(',')[1]); // Get Base64 string without "data:image/*;base64,"
+      reader.onerror = (err) => reject(err);
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleFileUpload = async (event:any) => {
+    const file = event.target.files[0]; // Get the selected file
+    if (file) {
+      try {
+        console.log('enetered')
+        const base64 = await convertImageToBase64(file);
+        setUploadedImage(base64); // Save Base64 image data to state
+        const reader = new FileReader();
+      reader.onload = () => {
+        if (reader.result) {
+          setUploadedFilePreview(reader.result as string);
+        }
+      };
+      reader.readAsDataURL(file);
+      } catch (error) {
+        console.error('Error converting image to Base64:', error);
+      }
+    }
+  };
+  const [messages, setMessages] = useState<Message[]>([
     {
       role: 'user',
-      content: [{ text: "Hello" }],
+      content: [{ text: "Hello",image:null }],
     },
     {
       role: 'assistant',
-      content: [{ text: "Hi! I'm the Tableau report analysing assistant. How can I help you today?" }],
+      content: [{ text: "Hi! I'm the Olympics Data support assistant. How can I help you today?" }],
     },
   ])
   const [message, setMessage] = useState('')
@@ -31,21 +65,21 @@ export default function Home() {
     scrollToBottom()
   }, [messages])
   const sendMessage = async () => {
-    if (!message.trim()) return;  // Don't send empty messages
+    if (!message.trim() && !uploadedImage) return;  // Don't send empty messages
     setIsLoading(true);
-
-    setMessage('')
     setMessages((messages) => [
       ...messages,
       {
         role: 'user',
-        content: [{ text: message }],
+        content: [{ text: message,image:uploadedFilePreview}],
       },
       {
         role: 'assistant',
         content: [{ text: '' }],
       },
     ])
+    setMessage('')
+    setUploadedFilePreview('')
 
     try {
       const response = await fetch('/api/chat', {
@@ -54,7 +88,7 @@ export default function Home() {
           'Content-Type': 'application/json',
         },
         //body: JSON.stringify([...messages, { role: 'user', content: [{ text: message }] }]),
-        body: JSON.stringify({text:message}),
+        body: JSON.stringify({text:message,image : uploadedImage,mimeType : mimeType}),
       })
 
       if (!response.ok) {
@@ -108,7 +142,7 @@ export default function Home() {
       }}
     >
       <Box textAlign="center" mb={4}>
-        <SupportAgentIcon></SupportAgentIcon><span>Welcome,I am your personalized AI assistant</span>
+        <SupportAgentIcon></SupportAgentIcon><span>Welcome,I am Astra! Your personalized AI assistant</span>
         <Typography variant="h4" component="h1">
             Hello {user?.displayName}
           </Typography>
@@ -144,18 +178,22 @@ export default function Home() {
                 message.role === 'assistant' ? 'flex-start' : 'flex-end'
               }
             >
-            <Box
-              bgcolor={message.role === 'assistant' ? 'primary.main' : 'secondary.main'}
-              color="white"
-              borderRadius={16}
-              p={3}
-              sx={{
-                maxWidth: '75%', // Ensure messages wrap within 75% of the container width
-                wordBreak: 'break-word',
-              }}
-            >
-              <ReactMarkdown>{message.content[0].text}</ReactMarkdown>
-            </Box>
+              <Box
+                bgcolor={
+                  message.role === 'assistant'
+                    ? 'primary.main'
+                    : 'secondary.main'
+                }
+                color="white"
+                borderRadius={16}
+                p={3}
+                sx={{
+                  maxWidth: '75%', // Ensure messages wrap within 75% of the container width
+                  wordBreak: 'break-word',
+                }}
+              >
+                {message.content[0].text}
+              </Box>
             </Box>
           ))}
           <div ref={msgEndRef} />
