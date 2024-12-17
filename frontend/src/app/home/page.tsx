@@ -4,6 +4,8 @@ import { Box, Button, Stack, TextField, Typography } from '@mui/material'
 import { useEffect, useRef, useState } from 'react'
 import SupportAgentIcon from '@mui/icons-material/SupportAgent';
 import { useAuth } from '../authcontext';
+import mime from 'mime';
+import ReactMarkdown from 'react-markdown'
 import ReactMarkdown from 'react-markdown'
 
 
